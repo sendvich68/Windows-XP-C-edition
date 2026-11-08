@@ -7,7 +7,7 @@ namespace WinXPEmulator
 {
     public partial class Form1 : Form
     {
-        // Импорт WinAPI для эмуляции нажатий клавиш
+        // --- WinAPI для эмуляции клавиш ---
         [DllImport("user32.dll")]
         static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
@@ -15,67 +15,93 @@ namespace WinXPEmulator
         const byte VK_TAB = 0x09;
         const byte VK_ESCAPE = 0x1B;
         const byte VK_CONTROL = 0x11;
+        const byte VK_ALT = 0x12;
+        const byte VK_F4 = 0x73;
+        const byte VK_DELETE = 0x2E;
 
         public Form1()
         {
             InitializeComponent();
             this.Text = "Windows XP Emulator (C#)";
-            this.BackColor = System.Drawing.Color.FromArgb(58, 110, 165); // Синий XP
+            this.BackColor = System.Drawing.Color.FromArgb(58, 110, 165);
+            this.ClientSize = new System.Drawing.Size(500, 300);
             SetupUI();
         }
 
         private void SetupUI()
         {
-            // Кнопка "Пуск" (эмуляция)
-            Button btnStart = new Button();
-            btnStart.Text = "Пуск";
-            btnStart.Location = new System.Drawing.Point(10, 10);
-            btnStart.Size = new System.Drawing.Size(80, 30);
-            btnStart.Click += (s, e) => EmulateKey(VK_LWIN);
-            this.Controls.Add(btnStart);
+            // === БЛОК ПИТАНИЯ ===
+            AddButton("Выключить ПК", 10, 10, (s, e) => ExecuteShutdown("/s /t 0"));
+            AddButton("Перезагрузка", 140, 10, (s, e) => ExecuteShutdown("/r /t 0"));
+            AddButton("Спящий режим", 270, 10, (s, e) => ExecuteShutdown("/h"));
 
-            // Кнопка "Выключить ПК" (реальное выключение)
-            Button btnShutdown = new Button();
-            btnShutdown.Text = "Выключить ПК";
-            btnShutdown.Location = new System.Drawing.Point(100, 10);
-            btnShutdown.Size = new System.Drawing.Size(120, 30);
-            btnShutdown.Click += (s, e) => ExecuteShutdown("/s /t 0");
-            this.Controls.Add(btnShutdown);
-
-            // Кнопка "Перезагрузка"
-            Button btnRestart = new Button();
-            btnRestart.Text = "Перезагрузка";
-            btnRestart.Location = new System.Drawing.Point(230, 10);
-            btnRestart.Size = new System.Drawing.Size(120, 30);
-            btnRestart.Click += (s, e) => ExecuteShutdown("/r /t 0");
-            this.Controls.Add(btnRestart);
-
-            // Кнопка "Alt+Tab" (переключение окон)
-            Button btnAltTab = new Button();
-            btnAltTab.Text = "Alt+Tab";
-            btnAltTab.Location = new System.Drawing.Point(10, 60);
-            btnAltTab.Size = new System.Drawing.Size(80, 30);
-            btnAltTab.Click += (s, e) => SimulateAltTab();
-            this.Controls.Add(btnAltTab);
+            // === БЛОК ЭМУЛЯЦИИ КЛАВИШ ===
+            AddButton("Пуск (Win)", 10, 60, (s, e) => EmulateKey(VK_LWIN));
+            AddButton("Alt+Tab", 140, 60, (s, e) => SimulateAltTab());
+            AddButton("Ctrl+Esc", 270, 60, (s, e) => SimulateCtrlEsc());
+            
+            // === СИСТЕМНЫЕ КОМБИНАЦИИ ===
+            AddButton("Alt+F4 (Закрыть)", 10, 110, (s, e) => SimulateAltF4());
+            AddButton("Ctrl+Alt+Del", 140, 110, (s, e) => SimulateCtrlAltDel());
+            
+            // === ЗАВЕРШЕНИЕ РАБОТЫ ПРИЛОЖЕНИЯ ===
+            AddButton("Выход из эмулятора", 10, 160, (s, e) => Application.Exit());
         }
 
-        // Эмуляция одиночного нажатия (например, Win)
+        private void AddButton(string text, int x, int y, EventHandler onClick)
+        {
+            Button btn = new Button();
+            btn.Text = text;
+            btn.Location = new System.Drawing.Point(x, y);
+            btn.Size = new System.Drawing.Size(120, 35);
+            btn.Font = new System.Drawing.Font("Tahoma", 9f);
+            btn.Click += onClick;
+            this.Controls.Add(btn);
+        }
+
+        // --- МЕТОДЫ ЭМУЛЯЦИИ ---
+
         private void EmulateKey(byte key)
         {
-            keybd_event(key, 0, 0, UIntPtr.Zero);
-            keybd_event(key, 0, 2, UIntPtr.Zero); // KEYEVENTF_KEYUP
+            keybd_event(key, 0, 0, UIntPtr.Zero); // Key Down
+            keybd_event(key, 0, 2, UIntPtr.Zero); // Key Up
         }
 
-        // Эмуляция Alt+Tab
         private void SimulateAltTab()
         {
-            keybd_event(0x12, 0, 0, UIntPtr.Zero); // Alt down
-            keybd_event(VK_TAB, 0, 0, UIntPtr.Zero); // Tab down
-            keybd_event(VK_TAB, 0, 2, UIntPtr.Zero); // Tab up
-            keybd_event(0x12, 0, 2, UIntPtr.Zero); // Alt up
+            keybd_event(VK_ALT, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_TAB, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_TAB, 0, 2, UIntPtr.Zero);
+            keybd_event(VK_ALT, 0, 2, UIntPtr.Zero);
         }
 
-        // Реальное управление питанием через shutdown.exe
+        private void SimulateCtrlEsc()
+        {
+            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_ESCAPE, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_ESCAPE, 0, 2, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, 2, UIntPtr.Zero);
+        }
+
+        private void SimulateAltF4()
+        {
+            keybd_event(VK_ALT, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_F4, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_F4, 0, 2, UIntPtr.Zero);
+            keybd_event(VK_ALT, 0, 2, UIntPtr.Zero);
+        }
+
+        private void SimulateCtrlAltDel()
+        {
+            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_ALT, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_DELETE, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_DELETE, 0, 2, UIntPtr.Zero);
+            keybd_event(VK_ALT, 0, 2, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, 2, UIntPtr.Zero);
+        }
+
+        // Реальное управление питанием
         private void ExecuteShutdown(string args)
         {
             Process.Start(new ProcessStartInfo("shutdown", args) { 

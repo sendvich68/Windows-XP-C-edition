@@ -16,10 +16,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x' # Или ваша версия
+        dotnet-version: '8.0.x'
 
+    # Исправление ошибки MSB1003: указываем явный файл проекта в корне
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore WinXPEmulator.csproj
       
     - name: Build
-      run: dotnet build --no-restore -c Release
+      run: dotnet build WinXPEmulator.csproj --no-restore -c Release

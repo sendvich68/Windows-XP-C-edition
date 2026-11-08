@@ -21,7 +21,7 @@ namespace WinXPEmulator
 
         public Form1()
         {
-            InitializeComponent();
+            // Убрана строка InitializeComponent(), так как Designer.cs отсутствует
             this.Text = "Windows XP Emulator (C#)";
             this.BackColor = System.Drawing.Color.FromArgb(58, 110, 165);
             this.ClientSize = new System.Drawing.Size(500, 300);
